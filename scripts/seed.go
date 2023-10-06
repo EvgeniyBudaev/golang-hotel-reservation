@@ -2,25 +2,27 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"github.com/EvgeniyBudaev/golang-hotel-reservation/internal/db"
 	"github.com/EvgeniyBudaev/golang-hotel-reservation/internal/models"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
 )
 
-func main() {
-	ctx := context.Background()
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(db.DBURI))
-	if err != nil {
-		log.Fatal(err)
-	}
-	hotelStore := db.NewMongoHotelStore(client, db.DBNAME)
-	roomStore := db.NewMongoRoomStore(client, db.DBNAME)
+var (
+	client     *mongo.Client
+	roomStore  db.RoomStore
+	hotelStore db.HotelStore
+	ctx        = context.Background()
+)
+
+func seedHotel(name string, location string, rating int) {
 	hotel := models.Hotel{
-		Name:     "Bellucia",
-		Location: "France",
+		Name:     name,
+		Location: location,
+		Rooms:    []primitive.ObjectID{},
+		Rating:   rating,
 	}
 	rooms := []models.Room{
 		{
@@ -42,10 +44,28 @@ func main() {
 	}
 	for _, room := range rooms {
 		room.HotelID = insertedHotel.ID
-		insertedRoom, err := roomStore.InsertRoom(ctx, &room)
+		_, err := roomStore.InsertRoom(ctx, &room)
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println(insertedRoom)
 	}
+}
+
+func main() {
+	seedHotel("Bellucia", "France", 3)
+	seedHotel("The cozy hotel", "Nederland", 4)
+	seedHotel("Don't die in your sleep", "London", 1)
+}
+
+func init() {
+	var err error
+	client, err = mongo.Connect(context.TODO(), options.Client().ApplyURI(db.DBURI))
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := client.Database(db.DBNAME).Drop(ctx); err != nil {
+		log.Fatal(err)
+	}
+	hotelStore = db.NewMongoHotelStore(client)
+	roomStore = db.NewMongoRoomStore(client, hotelStore)
 }
