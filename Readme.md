@@ -57,3 +57,16 @@ Fix errors
 ```
 go mod tidy
 ```
+
+## JWT
+Documentation
+```
+https://github.com/golang-jwt/jwt
+https://golang-jwt.github.io/jwt/usage/create
+https://pkg.go.dev/github.com/golang-jwt/jwt/v5#example-Parse-Hmac
+```
+
+Installing
+```
+go get -u github.com/golang-jwt/jwt/v5
+```
